@@ -5,3 +5,7 @@ Python project for machine learnig
 Scraping a website for flight prices and picking out the anomaliously low price
 
 Using webscraping techniques, parsed DOM and IFTTT
+
+# IFTTT
+
+Setting up Webhooks and SMS on https://ifttt.com/
