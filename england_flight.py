@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 import schedule
 import time
 
+
 def check_flights():
     url = "https://www.google.com/flights/explore/#explore;f=OSL,TRF,RYG;t=r-England,+United+Kingdom-0x47d0a98a6c1ed5df%253A0xf4e19525332d8ea8;li=3;lx=5;d=2018-01-24"
     driver = webdriver.PhantomJS()
