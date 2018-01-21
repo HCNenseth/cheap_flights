@@ -93,11 +93,11 @@ def check_flights():
     else:
         print('no alert triggered')
 
-    schedule.every(60).minutes.do(check_flights)
 
-    while 1:
-        schedule.run_pending()
-        time.sleep(1)
+print("Successfully Built")
 
+schedule.every(30).minutes.do(check_flights)
 
-print("Successfully Build")
+while 1:
+    schedule.run_pending()
+    time.sleep(1)
