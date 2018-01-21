@@ -1,3 +1,10 @@
+import sys
+
+from pip._vendor import requests
+
+import pandas as pd
+import numpy as np
+
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.by import By
@@ -6,6 +13,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup
+
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler, data
 
 import schedule
 import time
@@ -26,5 +36,71 @@ def check_flights():
 
     best_price_tags = s.findAll('div', 'CTPFVNB-w-d')
 
+    # see if it worked
+    if len(best_price_tags) < 4:
+        print('Failed to Load Page Data')
+        requests.post('https://maker.ifttt.com/trigger/fare_alert/with/key/bkSYqcLcxdVIqDUjWo1W20',
+                      data={"value1": "script", "value2": "failed", "value3": ""})
+        sys.exit(0)
+    else:
+        print('Successfully Loaded Page Data')
 
-check_flights()
+    best_prices = []
+    for tag in best_price_tags:
+        best_prices.append(int(tag.text.replace('$', '').replace(',', '')))
+
+    best_price = best_prices[0]
+
+    best_height_tags = s.findAll('div', 'CTPFVNB-w-f')
+    best_heights = []
+    for t in best_height_tags:
+        best_heights.append(float(t.attrs['style'].split('height:')[1].replace('px;', '')))
+
+    best_height = best_heights[0]
+
+    # Price per pixel of height
+    pph = np.array(best_price) / np.array(best_height)
+
+    cities = s.findAll('div', 'CTPFVNB-w-o')
+
+    hlist = []
+    for bar in cities[0] \
+            .findAll('div', 'CTPFVNB-w-x'):
+        hlist.append(float(bar['style'].split('height:')[1].replace('px;', '')) * pph)
+
+    fares = pd.DataFrame(hlist, columns=['price'])
+    px = [x for x in fares['price']]
+    ff = pd.DataFrame(px, columns=['fare']).reset_index()
+
+    X = StandardScaler().fit_transform(ff)
+    db = DBSCAN(eps=.5, min_samples=1).fit(X)
+
+    labels = db.labels_
+    clusters = len(set(labels))
+    unique_labels = set(labels)
+    colors = plt.cm.Spectral(np.linspace(0, 1, len(unique_labels)))
+
+    pf = pd.concat([ff, pd.DataFrame(db.labels_, columns=['cluster'])], axis=1)
+    rf = pf.groupby('cluster')['fare']\
+        .agg(['min', 'count']).sort_values('min', ascending=True)
+
+    if clusters > 1 \
+            and ff['fare'].min() == rf.iloc[0]['min'] \
+            and rf.iloc[0]['count'] < rf['count'].quantile(.10) \
+            and rf.iloc[0]['fare'] + 100 < rf.iloc[1]['fare']:
+            city = s.find('span', '              ').text
+            fare = s.find('div', '               ').text
+            requests.post('https://maker.ifttt.com/trigger/fare_alert/with/key/bkSYqcLcxdVIqDUjWo1W20',
+                          data={"value1": "script", "value2": "failed", "value3": ""})
+    else:
+        print('no alert triggered')
+
+    schedule.every(60).minutes.do(check_flights)
+
+    while 1:
+        schedule.run_pending()
+        time.sleep(1)
+
+
+print("Successfully Build")
+
