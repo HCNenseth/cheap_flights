@@ -22,21 +22,20 @@ from sklearn.preprocessing import StandardScaler
 
 def check_flights():
     url = "https://www.google.com/flights/explore/#explore;f=OSL,TRF,RYG;t=r-England," \
-          "+United+Kingdom-0x47d0a98a6c1ed5df%253A0xf4e19525332d8ea8;li=3;lx=5;d=2018-01-24"
-    driver = webdriver.PhantomJS()
-    dcap = dict(DesiredCapabilities.PHANTOMJS)
-    dcap["phantomjs.page.settings.userAgent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0)" \
-                                                " Gecko/20100101 Firefox/57.0"
-    driver = webdriver.PhantomJS(desired_capabilities=dcap, service_args=['--ignore-ssl-error=true'])
-    driver.implicitly_wait(20)
+          "+United+Kingdom-0x47d0a98a6c1ed5df%253A0xf4e19525332d8ea8;li=3;lx=5;d=2018-01-28"
+    service = webdriver.chrome.service.Service('C:\Program Files\chromedriver\chromedriver.exe')
+    service.start()
+    capabilities = {'chrome.binary': 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'}
+    driver = webdriver.Remote(service.service_url, capabilities)
     driver.get(url)
+    time.sleep(10)
 
     wait = WebDriverWait(driver, 20)
     wait.until(ec.visibility_of_element_located((By.CSS_SELECTOR, "span.CTPFVNB-v-c")))
 
     s = BeautifulSoup(driver.page_source, "lxml")
 
-    best_price_tags = s.findAll('div', 'CTPFVNB-w-d')
+    best_price_tags = s.findAll('div', 'CTPFVNB-w-e')
 
     # see if it worked
     if len(best_price_tags) < 4:
@@ -53,7 +52,7 @@ def check_flights():
 
     best_price = best_prices[0]
 
-    best_height_tags = s.findAll('div', 'CTPFVNB-w-f')
+    best_height_tags = s.findAll('div', 'CTPFVNB-w-x')
     best_heights = []
     for t in best_height_tags:
         best_heights.append(float(t.attrs['style'].split('height:')[1].replace('px;', '')))
@@ -88,8 +87,8 @@ def check_flights():
             and ff['fare'].min() == rf.iloc[0]['min'] \
             and rf.iloc[0]['count'] < rf['count'].quantile(.10) \
             and rf.iloc[0]['fare'] + 100 < rf.iloc[1]['fare']:
-            city = s.find('span', 'CTPFVNB-w-x').text
-            fare = s.find('div', 'CTPFVNB-w-x').text
+            city = s.find('span', 'CTPFVNB-v-c').text
+            fare = s.find('div', 'CTPFVNB-w-e').text
             requests.post('https://maker.ifttt.com/trigger/fare_alert/with/key/bkSYqcLcxdVIqDUjWo1W20',
                           data={"value1": city, "value2": fare, "value3": ""})
     else:
