@@ -20,8 +20,10 @@ from sklearn.preprocessing import StandardScaler
 
 
 def check_flights():
-    url = "https://www.google.com/flights/explore/#explore;f=OSL,TRF,RYG;t=r-England," \
-          "+United+Kingdom-0x47d0a98a6c1ed5df%253A0xf4e19525332d8ea8;li=3;lx=5;d=2018-01-28"
+   # url = "https://www.google.com/flights/explore/#explore;f=OSL,TRF,RYG;t=r-England," \
+    #      "+United+Kingdom-0x47d0a98a6c1ed5df%253A0xf4e19525332d8ea8;li=3;lx=5;d=2018-01-28"
+    url = "https://www.google.com/flights/explore/#explore;f=OSL,TRF,RYG;t=FRA,ZRB;li=3;lx=5;d=2018-03-11"
+
     service = webdriver.chrome.service.Service('C:\Program Files\chromedriver\chromedriver.exe')
     service.start()
     capabilities = {'chrome.binary': 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'}
@@ -37,7 +39,7 @@ def check_flights():
     best_price_tags = s.findAll('div', 'CTPFVNB-w-e')
 
     # see if it worked
-    if len(best_price_tags) < 4:
+    if len(best_price_tags) < 1:
         print('Failed to Load Page Data')
         requests.post('https://maker.ifttt.com/trigger/fare_alert/with/key/bkSYqcLcxdVIqDUjWo1W20',
                       data={"value1": "script", "value2": "failed", "value3": ""})
